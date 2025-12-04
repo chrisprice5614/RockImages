@@ -1,0 +1,57 @@
+<%- include("includes/head", { title: "Dashboard | RockImages" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-dashboard">
+  <div class="ri-dashboard-header">
+    <h1>Welcome, <%= currentUser.username %></h1>
+    <a href="/organizations/new" class="ri-button ri-button-primary">
+      + New organization
+    </a>
+  </div>
+
+  <div class="ri-dashboard-grid">
+    <div class="ri-card">
+      <h2>Your organizations</h2>
+      <% if (!myOrgs.length) { %>
+        <p class="ri-muted">You’re not in any organizations yet.</p>
+      <% } else { %>
+        <ul class="ri-list">
+          <% myOrgs.forEach(o => { %>
+            <li>
+              <a href="/organizations/<%= o.id %>" class="ri-list-link">
+                <div class="ri-list-title"><%= o.name %></div>
+                <div class="ri-list-sub">
+                  Role: <%= o.role %> ·
+                  <%= o.is_public ? "Public" : "Private" %>
+                </div>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <div class="ri-card">
+      <h2>Recent uploads</h2>
+      <% if (!recentFiles.length) { %>
+        <p class="ri-muted">No uploads yet. Start by adding files.</p>
+      <% } else { %>
+        <div class="ri-grid ri-grid-files">
+          <% recentFiles.forEach(f => { %>
+            <div class="ri-file-card">
+              <div class="ri-file-body">
+                <div class="ri-file-title"><%= f.display_name %></div>
+                <div class="ri-file-sub"><%= f.org_name %></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

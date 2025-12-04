@@ -1,0 +1,32 @@
+<%- include("includes/head", { title: "Sign up | RockImages" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-auth-card">
+  <h1>Create your account</h1>
+  <form method="POST" action="/register" class="ri-form">
+    <label>
+      Username
+      <input type="text" name="username" required class="ri-input" />
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" required class="ri-input" />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required class="ri-input" />
+    </label>
+    <div class="g-recaptcha" data-sitekey="6Lchm2ErAAAAAGGXkJ9ane8BFngVnsa8tXF_PofO"></div>
+    <button class="ri-button ri-button-primary">Sign up</button>
+  </form>
+  <p class="ri-muted">
+    Already have an account?
+    <a href="/login">Log in</a>
+  </p>
+</section>
+
+</main>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</body>
+</html>

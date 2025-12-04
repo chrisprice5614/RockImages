@@ -1,0 +1,285 @@
+<%- include("includes/head", { title: org.name + " | RockImages" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-org-layout" data-org-id="<%= org.id %>">
+  <aside class="ri-org-sidebar">
+    <h1><%= org.name %></h1>
+    <p class="ri-muted"><%= org.description || "No description." %></p>
+    <p class="ri-badge-row">
+      <span class="ri-badge"><%= org.is_public ? "Public" : "Private" %></span>
+      <% if (membership) { %>
+        <span class="ri-badge ri-badge-soft">Role: <%= membership.role %></span>
+      <% } %>
+    </p>
+
+    <% if (membership && (membership.role === "owner" || membership.role === "editor")) { %>
+      <div class="ri-card ri-card-sub">
+        <h2>Invite member</h2>
+        <form action="/organizations/<%= org.id %>/members" method="POST" class="ri-form">
+          <label>
+            Username
+            <input type="text" name="username" class="ri-input" required />
+          </label>
+          <label>
+            Role
+            <select name="role" class="ri-input">
+              <option value="editor">Editor</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </label>
+          <button class="ri-button ri-button-ghost">Add member</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (membership && (membership.role === "owner" || membership.role === "editor")) { %>
+      <div class="ri-card ri-card-sub">
+        <h2>Groups</h2>
+        <% if (!groups.length) { %>
+          <p class="ri-muted">No groups yet.</p>
+        <% } else { %>
+          <div class="ri-tag-list">
+            <% groups.forEach(g => { %>
+              <span class="ri-tag" data-group-id="<%= g.id %>" style="--tag-color:<%= g.color_hex %>">
+                <span class="ri-tag-color-dot"></span>
+                <%= g.name %>
+              </span>
+            <% }) %>
+          </div>
+        <% } %>
+        <form action="/organizations/<%= org.id %>/groups" method="POST" class="ri-form ri-form-inline">
+          <input type="text" name="name" placeholder="New group" class="ri-input" required />
+          <input type="color" name="color_hex" value="#4f46e5" class="ri-input ri-input-color" />
+          <button class="ri-button ri-button-ghost">Add</button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="ri-card ri-card-sub">
+        <h2>Groups</h2>
+        <% if (!groups.length) { %>
+          <p class="ri-muted">No groups.</p>
+        <% } else { %>
+          <div class="ri-tag-list">
+            <% groups.forEach(g => { %>
+              <span class="ri-tag" style="--tag-color:<%= g.color_hex %>">
+                <span class="ri-tag-color-dot"></span>
+                <%= g.name %>
+              </span>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </aside>
+
+  <section class="ri-org-main">
+    <% if (membership && (membership.role === "owner" || membership.role === "editor")) { %>
+      <div class="ri-card ri-upload-card">
+        <h2>Upload files</h2>
+        <p class="ri-muted">
+          Drop multiple images or videos. Upload starts right away while you name and tag.
+        </p>
+        <div class="ri-upload-drop" id="upload-drop">
+          <input
+            id="file-input"
+            type="file"
+            name="files"
+            multiple
+            class="ri-file-input"
+          />
+          <p>Click or drag & drop files here</p>
+        </div>
+        <div id="upload-queue" class="ri-upload-queue"></div>
+        <div class="ri-upload-finish-row">
+          <button type="button" id="upload-finish-btn" class="ri-button ri-button-ghost">
+            Finish
+          </button>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="ri-card ri-files-card">
+  <div class="ri-files-header">
+    <h2>Files</h2>
+    <input
+      type="text"
+      id="file-search-input"
+      class="ri-input"
+      placeholder="Search files..."
+    />
+  </div>
+  <% if (groups.length) { %>
+    <div class="ri-filter-chip-row" id="group-filter-row">
+      <button class="ri-chip ri-chip-active" data-group="all">All</button>
+      <% groups.forEach(g => { %>
+        <button
+          class="ri-chip"
+          data-group="<%= g.id %>"
+          style="--chip-color:<%= g.color_hex %>">
+          <%= g.name %>
+        </button>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div id="file-search-groups" class="ri-search-groups-results"></div>
+
+  <div id="files-grid" class="ri-grid ri-grid-files">
+  <% files.forEach(f => { 
+       const fGroups = fileGroupsByFileId && fileGroupsByFileId[f.id] ? fileGroupsByFileId[f.id] : [];
+  %>
+    <div
+      class="ri-file-card"
+      data-file-id="<%= f.id %>"
+      data-display-name="<%- f.display_name %>"
+      data-shoot-date="<%= f.shoot_date || '' %>"
+      data-location="<%- f.location_text || '' %>"
+      data-original-url="/<%= f.original_path %>"
+      data-is-video="<%= f.is_video ? '1' : '0' %>"
+    >
+      <% if (f.is_video) { %>
+        <div class="ri-file-thumb">
+          <video src="/<%= f.original_path %>" muted preload="metadata"></video>
+          <span class="ri-badge video-badge">Video</span>
+        </div>
+      <% } else { %>
+        <div class="ri-file-thumb">
+          <img src="/<%= f.thumb_path %>" alt="<%= f.display_name %>" />
+        </div>
+      <% } %>
+
+      <% if (fGroups.length) { %>
+        <div class="ri-file-groups-row">
+          <% fGroups.forEach(gr => { %>
+            <span class="ri-tag" style="--tag-color:<%= gr.color_hex %>">
+              <span class="ri-tag-color-dot"></span>
+              <%= gr.name %>
+            </span>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="ri-file-body">
+        <div class="ri-file-title"><%= f.display_name %></div>
+        <div class="ri-file-meta-line">
+          <span class="ri-file-meta">
+            <%= f.shoot_date || '' %>
+            <% if (f.location_text) { %>
+              &middot; <%= f.location_text %>
+            <% } %>
+          </span>
+        </div>
+        <div class="ri-file-actions">
+          <% if (f.is_video) { %>
+            <a href="/files/<%= f.id %>/view" target="_blank" class="ri-link-small">View</a>
+            <a href="/files/<%= f.id %>/download" class="ri-link-small">Download</a>
+          <% } else { %>
+            <a href="/files/<%= f.id %>/download" class="ri-link-small">Download</a>
+          <% } %>
+          <% if (membership && (membership.role === "owner" || membership.role === "editor")) { %>
+            <button type="button" class="ri-link-small ri-btn-edit" data-file-id="<%= f.id %>">
+              Edit
+            </button>
+            <button type="button" class="ri-link-small ri-link-danger ri-btn-delete" data-file-id="<%= f.id %>">
+              Delete
+            </button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<div id="files-pagination" class="ri-pagination"></div>
+
+</div>
+
+<div id="file-edit-modal-backdrop" class="ri-modal-backdrop">
+  <div class="ri-modal">
+    <div class="ri-modal-header">
+      <div class="ri-modal-title">Edit file</div>
+      <button type="button" class="ri-modal-close" id="file-edit-close-btn">x</button>
+    </div>
+    <div class="ri-modal-body">
+  <input type="hidden" id="file-edit-id" />
+  <label>
+    Name
+    <input type="text" id="file-edit-name" class="ri-input ri-input-sm" />
+  </label>
+  <div style="margin-top:8px;">
+    <label>
+      Date
+      <input type="date" id="file-edit-date" class="ri-input ri-input-sm" />
+    </label>
+  </div>
+  <div style="margin-top:8px;">
+    <label>
+      Location
+      <input type="text" id="file-edit-location" class="ri-input ri-input-sm" />
+    </label>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="ri-upload-groups-label">Groups:</span>
+    <div id="file-edit-groups" class="ri-upload-groups-chips">
+      <% groups.forEach(g => { %>
+        <label class="ri-group-chip">
+          <input type="checkbox" value="<%= g.id %>" />
+          <span><%= g.name %></span>
+        </label>
+      <% }) %>
+    </div>
+  </div>
+  <div style="margin-top:8px;">
+    <label>
+      Reupload file
+      <input type="file" id="file-edit-file" class="ri-input" />
+    </label>
+  </div>
+</div>
+
+    <div class="ri-modal-footer">
+      <button type="button" class="ri-button ri-button-ghost" id="file-edit-cancel-btn">
+        Cancel
+      </button>
+      <button type="button" class="ri-button ri-button-primary" id="file-edit-save-btn">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
+
+
+  </section>
+</section>
+
+
+<div id="file-view-overlay" class="ri-file-overlay-backdrop">
+  <div class="ri-file-overlay-panel">
+    <button type="button" class="ri-file-overlay-close" id="file-view-close-btn">x</button>
+    <div class="ri-file-overlay-media-wrap">
+      <img id="file-view-image" src="" alt="" style="display:none;" />
+      <video id="file-view-video" controls style="display:none;"></video>
+    </div>
+    <div class="ri-file-overlay-info">
+      <div class="ri-file-overlay-title" id="file-view-title"></div>
+      <div class="ri-file-overlay-meta">
+        <span id="file-view-date"></span>
+        <span id="file-view-location"></span>
+      </div>
+      <div class="ri-file-overlay-groups" id="file-view-groups"></div>
+      <div class="ri-file-overlay-actions">
+        <a id="file-view-download" class="ri-button ri-button-primary" href="#" download>Download</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="/public/js/uploader.js"></script>
+<script src="/public/js/file-search.js"></script>
+<script src="/public/js/file-edit.js"></script>
+<script src="/public/js/file-view.js"></script>
+</main>
+</body>
+</html>

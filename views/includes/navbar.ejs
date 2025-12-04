@@ -1,0 +1,17 @@
+<header class="ri-navbar">
+  <div class="ri-navbar-left">
+    <a href="/" class="ri-logo">RockImages</a>
+  </div>
+  <div class="ri-navbar-right">
+    <% if (currentUser) { %>
+      <a href="/dashboard" class="ri-nav-link">Dashboard</a>
+      <form action="/logout" method="POST" class="ri-inline-form">
+        <button class="ri-button ri-button-ghost">Logout</button>
+      </form>
+    <% } else { %>
+      <a href="/login" class="ri-nav-link">Log in</a>
+      <a href="/register" class="ri-button ri-button-primary">Sign up</a>
+    <% } %>
+  </div>
+</header>
+<main class="ri-main">

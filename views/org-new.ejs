@@ -1,0 +1,29 @@
+<%- include("includes/head", { title: "New organization | RockImages" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-auth-card">
+  <h1>Create organization</h1>
+  <form method="POST" action="/organizations/new" class="ri-form">
+    <label>
+      Name
+      <input type="text" name="name" required class="ri-input" />
+    </label>
+    <label>
+      Description
+      <textarea name="description" class="ri-input"></textarea>
+    </label>
+    <label>
+      Visibility
+      <select name="visibility" class="ri-input">
+        <option value="public">Public (searchable)</option>
+        <option value="private">Private (only members)</option>
+      </select>
+    </label>
+    <button class="ri-button ri-button-primary">Create</button>
+  </form>
+</section>
+
+</main>
+</body>
+</html>

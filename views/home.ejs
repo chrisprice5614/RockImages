@@ -1,0 +1,37 @@
+<%- include("includes/head", { title: "RockImages | Simple visual library" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-hero">
+  <div class="ri-hero-content">
+    <h1>RockImages</h1>
+    <p>
+      Visual storage so simple even someone dumb as rocks can use it.
+      Create organizations, group your images and videos, and find anything instantly.
+    </p>
+    <div class="ri-hero-actions">
+      <% if (!currentUser) { %>
+        <a href="/register" class="ri-button ri-button-primary">Get started</a>
+        <a href="/login" class="ri-button ri-button-ghost">Log in</a>
+      <% } else { %>
+        <a href="/dashboard" class="ri-button ri-button-primary">Go to dashboard</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="ri-hero-card">
+    <h2>Browse public organizations</h2>
+    <input
+      id="org-search-input"
+      type="text"
+      placeholder="Search organizations..."
+      class="ri-input"
+    />
+    <div id="org-search-results" class="ri-grid"></div>
+  </div>
+</section>
+
+<script src="/public/js/org-search.js"></script>
+</main>
+</body>
+</html>

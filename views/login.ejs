@@ -1,0 +1,26 @@
+<%- include("includes/head", { title: "Log in | RockImages" }) %>
+<%- include("includes/navbar") %>
+<%- include("includes/flash") %>
+
+<section class="ri-auth-card">
+  <h1>Log in</h1>
+  <form method="POST" action="/login" class="ri-form">
+    <label>
+      Username
+      <input type="text" name="username" required class="ri-input" />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required class="ri-input" />
+    </label>
+    <button class="ri-button ri-button-primary">Log in</button>
+  </form>
+  <p class="ri-muted">
+    Need an account?
+    <a href="/register">Sign up</a>
+  </p>
+</section>
+
+</main>
+</body>
+</html>
