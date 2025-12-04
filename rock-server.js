@@ -282,14 +282,22 @@ app.post("/organizations/new", requireLogin, (req, res) => {
 });
 
 // Org show
-app.get("/organizations/:id", requireLogin, (req, res) => {
+// Org show
+app.get("/organizations/:id", (req, res) => {
   const orgId = Number(req.params.id);
-  const userId = req.session.userId;
+  const userId = req.session.userId || null;
   const org = getOrgById(orgId);
   if (!org) return res.status(404).send("Organization not found.");
 
-  const membership = getOrgRole(orgId, userId);
+  const membership = userId ? getOrgRole(orgId, userId) : null;
+
+  // If org is private, require login + membership
   if (!membership && !org.is_public) {
+    if (!userId) {
+      // not logged in at all -> send to login
+      return res.redirect("/login");
+    }
+    // logged in but not a member
     return res.status(403).send("You don't have access to this org.");
   }
 
@@ -365,13 +373,14 @@ app.get("/organizations/:id", requireLogin, (req, res) => {
     groups,
     files,
     membership,
-    fileGroupsByFileId,   // <<< this is what EJS needs
+    fileGroupsByFileId,
     page: currentPage,
     totalPages,
     totalFiles,
     perPage
   });
 });
+
 
 
 
@@ -680,11 +689,12 @@ app.get("/api/orgs", (req, res) => {
 });
 
 // Search files within org
-app.get("/api/organizations/:id/files", requireLogin, (req, res) => {
+// Search files within org
+app.get("/api/organizations/:id/files", (req, res) => {
   const orgId = Number(req.params.id);
   const q = String(req.query.q || "").trim();
   const groupId = req.query.group ? Number(req.query.group) : null;
-  const userId = req.session.userId;
+  const userId = req.session.userId || null;
 
   const org = getOrgById(orgId);
   if (!org) {
@@ -699,10 +709,11 @@ app.get("/api/organizations/:id/files", requireLogin, (req, res) => {
     });
   }
 
-  const membership = getOrgRole(orgId, userId);
+  const membership = userId ? getOrgRole(orgId, userId) : null;
   const canEdit =
     membership && (membership.role === "owner" || membership.role === "editor");
 
+  // Private org: block non-members (whether logged in or not)
   if (!membership && !org.is_public) {
     return res.status(403).json({
       ok: false,
@@ -833,7 +844,6 @@ app.get("/api/organizations/:id/files", requireLogin, (req, res) => {
       thumb_url: "/" + f.thumb_path.replace(/\\/g, "/"),
       original_url: "/" + f.original_path.replace(/\\/g, "/"),
       is_video: !!f.is_video,
-      // these columns exist from the table change you added:
       shoot_date: f.shoot_date || "",
       location: f.location || "",
       groups: groupsByFileId[f.id] || []
@@ -841,6 +851,7 @@ app.get("/api/organizations/:id/files", requireLogin, (req, res) => {
     groups: matchingGroups
   });
 });
+
 
 
 
@@ -1017,3 +1028,5 @@ app.get("/files/:id/view", (req, res) => {
 app.listen(PORT, () => {
   console.log("RockImages running on http://localhost:" + PORT);
 });
+
+
