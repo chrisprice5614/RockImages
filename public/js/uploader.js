@@ -28,6 +28,9 @@ function createQueueItem(file) {
       <div class="ri-upload-progress-bar">
         <div class="ri-upload-progress-fill"></div>
       </div>
+      <div class="ri-upload-thumb-wrap">
+        <div class="ri-upload-thumb-inner"></div>
+      </div>
       <div class="ri-upload-status"></div>
     </div>
     <div class="ri-upload-meta">
@@ -65,16 +68,40 @@ function createQueueItem(file) {
     </div>
   `;
 
+  // 🔹 Local preview WHILE uploading
+  const thumbInner = item.querySelector(".ri-upload-thumb-inner");
+  if (thumbInner) {
+    if (file.type && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = file.name;
+      img.onload = () => URL.revokeObjectURL(url);
+      thumbInner.appendChild(img);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "ri-upload-thumb-placeholder";
+      placeholder.textContent = file.type && file.type.startsWith("video/")
+        ? "Video"
+        : "File";
+      thumbInner.appendChild(placeholder);
+    }
+  }
+
   queueContainer.appendChild(item);
   return item;
 }
+
 
 async function uploadFile(file, tempId) {
   if (!orgId_upload) return;
 
   const item = queueContainer.querySelector(`[data-temp-id="${tempId}"]`);
+  if (!item) return;
+
   const progressFill = item.querySelector(".ri-upload-progress-fill");
   const statusEl = item.querySelector(".ri-upload-status");
+  const thumbInner = item.querySelector(".ri-upload-thumb-inner");
 
   const formData = new FormData();
   formData.append("files", file);
@@ -83,7 +110,7 @@ async function uploadFile(file, tempId) {
   xhr.open("POST", `/organizations/${orgId_upload}/files/upload`, true);
 
   xhr.upload.addEventListener("progress", e => {
-    if (e.lengthComputable) {
+    if (e.lengthComputable && progressFill) {
       const pct = (e.loaded / e.total) * 100;
       progressFill.style.width = pct.toFixed(0) + "%";
     }
@@ -92,27 +119,53 @@ async function uploadFile(file, tempId) {
   xhr.onreadystatechange = async () => {
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
-        progressFill.style.width = "100%";
-        const data = JSON.parse(xhr.responseText);
+        if (progressFill) progressFill.style.width = "100%";
+
+        let data;
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch (err) {
+          if (statusEl) {
+            statusEl.textContent = "Upload failed";
+            statusEl.style.color = "#b91c1c";
+          }
+          return;
+        }
+
         const created = data.files && data.files[0];
         if (created) {
           uploadState.set(tempId, {
             fileId: created.id,
-            display_name: created.display_name
+            display_name: created.display_name,
+            thumb_url: created.thumb_url || null,
+            is_video: !!created.is_video
           });
+
+          // 🔹 Swap to server-generated thumbnail once we have it
+          if (thumbInner && created.thumb_url && !created.is_video) {
+            thumbInner.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = created.thumb_url;
+            img.alt = created.display_name || file.name;
+            thumbInner.appendChild(img);
+          }
+
           await pushMetadata(tempId);
-          statusEl.textContent = "✔ Uploaded";
+          if (statusEl) statusEl.textContent = "✔ Uploaded";
         }
       } else {
-        progressFill.classList.add("ri-upload-error");
-        statusEl.textContent = "Upload failed";
-        statusEl.style.color = "#b91c1c";
+        if (progressFill) progressFill.classList.add("ri-upload-error");
+        if (statusEl) {
+          statusEl.textContent = "Upload failed";
+          statusEl.style.color = "#b91c1c";
+        }
       }
     }
   };
 
   xhr.send(formData);
 }
+
 
 async function pushMetadata(tempId) {
   const state = uploadState.get(tempId);
